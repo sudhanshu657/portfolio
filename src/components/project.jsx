@@ -503,18 +503,18 @@ const projects = [
     description:
       "Collaborative task management application with real-time updates, drag-and-drop functionality, and team collaboration features.",
     image: "/project_2.png",
-    tech: ["React.js", "Tailwind CSS", "MERN", "MongoDB"],
+    tech: ["ClipDrop API", "Tailwind CSS", "MERN", "MongoDB"],
     github: "https://github.com/sudhanshu657/Pictura",
     demo: "https://pictura2-client.onrender.com/",
   },
   {
-    title: "QuickBite",
+    title: "SnapCart-E-comm",
     description:
-      "QuickBite is a fully responsive food ordering web app built with React.js, Tailwind CSS, and Vite, featuring a modern UI and smooth user experience.It includes category-based menus, effortless ordering, and a real-time order calculator that updates instantly without page reloads.",
+      "Built a full-stack e-commerce platform with persistent carts, real-time updates, and secure checkout to improve user retention. Designed a fast, responsive interface for a smooth shopping experience and implemented reliable user synchronization for accurate account and data management.",
     image: "/project_3.png",
-    tech: ["ClipDrop API", "React", "Tailwind CSS"],
-    github: "https://github.com/sudhanshu657/QuickBite",
-    demo: "https://cafe-management-system-olive.vercel.app/",
+    tech: [ "Next js", "Tailwind CSS"],
+    github: "https://github.com/sudhanshu657/SnapCart_Ecommerce",
+    demo: "https://snap-cart-ecommerce-mu.vercel.app/",
   },
   {
     title: "Gym Website",
