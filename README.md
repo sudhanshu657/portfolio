@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+🚀 AI-Powered Portfolio Website with Co-Browsing Assistant
 
-## Getting Started
+This project is a modern personal portfolio website enhanced with an AI co-browsing assistant that can understand natural language commands and interact with the site (scroll, highlight sections, fill forms, and submit contact forms automatically).
 
-First, run the development server:
+✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🤖 AI Chatbot Assistant
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Scroll to sections (hero, skills, projects, contact)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Highlight or focus sections
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Auto-fill contact form fields (name, email, message)
 
-## Learn More
+Click submit button automatically
 
-To learn more about Next.js, take a look at the following resources:
+📬 Smart Contact Form
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Name, email, and message inputs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Integrated with EmailJS for sending emails
 
-## Deploy on Vercel
+Success & error feedback messages
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+🎨 Modern UI
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+🛠️ Tech Stack
+
+Frontend: Next.js (App Router), React, Tailwind CSS, Framer Motion
+
+UI Components: shadcn/ui, Lucide Icons
+
+AI Backend: Google Gemini API (@google/generative-ai)
+
+Email Service: EmailJS
+
+🧪 Example AI Commands
+
+Try typing these into the chatbot:
+
+Scroll to projects
+Highlight the skills section
+Focus on the hero section
+enter name ....
+enter email...
+enter message ...
+send
+
+Built with Next.js, Tailwind CSS, Framer Motion, and shadcn/ui
+
+Responsive and smooth animations
