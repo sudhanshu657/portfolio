@@ -231,6 +231,47 @@ export default function Chatbot() {
           break
         }
 
+        case "submit-contact": {
+          try {
+            // Try to find a form inside #contact
+            const contactRoot = document.getElementById('contact') || document.querySelector('#contact')
+            let form = contactRoot ? contactRoot.querySelector('form') : null
+            if (!form) {
+              // try to find the form by heuristics (form that contains an email input)
+              const forms = Array.from(document.querySelectorAll('form'))
+              form = forms.find(f => f.querySelector('input[type="email"], input[name*="email"]')) || forms[0]
+            }
+
+            if (form) {
+              // prefer clicking the submit button if present
+              const btn = form.querySelector('button[type="submit"], input[type="submit"]')
+              if (btn) {
+                try { btn.focus?.(); } catch {}
+                btn.click()
+                addMessage(data.content || 'Message sent.')
+                return
+              }
+
+              // fallback to submitting the form
+              try { form.requestSubmit ? form.requestSubmit() : form.submit(); addMessage(data.content || 'Message sent.'); return } catch (e) {}
+            }
+
+            // last resort: click buttons with 'send' or 'send message' text
+            const candidates = Array.from(document.querySelectorAll('button, a, input[type="button"]'))
+            const sendBtn = candidates.find(e => {
+              const t = (e.textContent || e.value || '').trim().toLowerCase()
+              return t === 'send message' || t === 'send' || t === 'send message' || t.includes('send') || t.includes('submit')
+            })
+            if (sendBtn) { try { sendBtn.click(); addMessage(data.content || 'Message sent.'); return } catch (e) {} }
+
+            addMessage('⚠️ Could not find the contact submit button.')
+          } catch (e) {
+            console.error('submit-contact error', e)
+            addMessage('⚠️ Failed to submit contact form.')
+          }
+          break
+        }
+
         case "click": {
           const el = findElement(data.selector)
           if (el) {
@@ -360,6 +401,88 @@ export default function Chatbot() {
     setMessages(newMessages)
     setInput("")
 
+    // Handle chained local commands like: "enter name sudhanshu enter mail sudh@143 enter message hello click the contact form submit button"
+    const parseAndExecuteSequence = (t) => {
+      const seq = t
+
+      // find all fill commands
+      const fillRegex = /(?:enter|type|fill)\s+(\w+)\s+([\s\S]*?)(?=(?:\s+(?:enter|click|press|submit|then|and)\b)|$)/gi
+      const fills = []
+      let m
+      while ((m = fillRegex.exec(seq)) !== null) {
+        fills.push({ field: m[1].toLowerCase().trim(), value: m[2].trim() })
+      }
+
+      // find click/submit commands
+      const clickRegex = /(?:click|press|submit)\s+(?:the\s+)?([\s\S]*?)(?=(?:\s+(?:enter|click|press|submit|then|and)\b)|$)/gi
+      const clicks = []
+      while ((m = clickRegex.exec(seq)) !== null) {
+        clicks.push(m[1].trim())
+      }
+
+      if (!fills.length && !clicks.length) return false
+
+      const fieldMap = {
+        name: [ 'input[name="name"]', 'input[placeholder*="Name"]', 'input[id*="name"]' ],
+        email: [ 'input[name="email"]', 'input[type="email"]', 'input[placeholder*="Email"]', 'input[id*="email"]' ],
+        mail: [ 'input[name="email"]', 'input[type="email"]' ],
+        message: [ 'textarea[name="message"]', 'textarea[placeholder*="Message"]', 'textarea[id*="message"]' ],
+        mesage: [ 'textarea[name="message"]', 'textarea[placeholder*="Message"]' ],
+        msg: [ 'textarea[name="message"]' ]
+      }
+
+      // perform fills
+      for (const f of fills) {
+        const key = f.field in fieldMap ? f.field : (f.field.replace(/[^a-z]/g, '') in fieldMap ? f.field.replace(/[^a-z]/g, '') : f.field)
+        const selectors = fieldMap[key] || fieldMap[f.field] || []
+        let used = false
+        for (const sel of selectors) {
+          try {
+            // use existing executeAction 'fill' which will resolve the selector
+            executeAction({ type: 'fill', selector: sel, value: f.value, content: `Filled ${f.field}` })
+            used = true
+            break
+          } catch (e) {}
+        }
+        if (!used) {
+          // try generic selectors inside contact section
+          const contactRoot = document.getElementById('contact') || document.querySelector('#contact')
+          if (contactRoot) {
+            const input = contactRoot.querySelector('input[name="' + f.field + '"]') || contactRoot.querySelector('textarea[name="' + f.field + '"]')
+            if (input) {
+              try { input.value = f.value; input.dispatchEvent(new Event('input', { bubbles: true })); addMessage(`Filled ${f.field}`) } catch (e) {}
+            }
+          }
+        }
+      }
+
+      // perform clicks
+      for (const c of clicks) {
+        const s = c.toLowerCase()
+        // common targets: submit, contact form submit, send message
+        if (s.includes('submit') || s.includes('contact form') || s.includes('send')) {
+          // try to click contact form submit button
+          const selectors = [ '#contact form button[type="submit"]', '#contact button[type="submit"]', 'form button[type="submit"]', 'button[type="submit"]', 'button:contains("Send Message")', 'button:contains("Send")' ]
+          let clicked = false
+          for (const sel of selectors) {
+            try {
+              executeAction({ type: 'click', selector: sel, content: 'Clicked submit' })
+              clicked = true
+              break
+            } catch (e) {}
+          }
+          if (!clicked) addMessage('⚠️ Could not find submit button to click.')
+        } else {
+          // generic click by text
+          try { executeAction({ type: 'click', selector: c, content: `Clicked ${c}` }) } catch(e) { addMessage(`⚠️ Could not click ${c}`) }
+        }
+      }
+
+      return true
+    }
+
+    if (parseAndExecuteSequence(text)) return
+
     // Quick direct matches for single-word social shortcuts (covers misspellings)
     const quickSocialMatch = (t) => {
       const s = t.toLowerCase().trim()
@@ -391,6 +514,9 @@ export default function Chatbot() {
       }
       const openProjectMatch = s.match(/open project (?:named )?"?([\w\s-]+)"?/) || s.match(/open (?:the )?project "?([\w\s-]+)"?/) || s.match(/^open\s+"?([\w\s-]+)"?$/)
       if (openProjectMatch) return { type: "open-project", selector: openProjectMatch[1].trim(), content: `Opening project ${openProjectMatch[1].trim()}...` }
+      if (s.includes("send message") || s.includes("send my message") || s.includes("submit message") || s === "send") {
+        return { type: "submit-contact", content: "Sending your message..." }
+      }
       const filterMatch = s.match(/filter projects by (.+)/) || s.match(/show projects (?:with|using) (.+)/)
       if (filterMatch) return { type: "filter-projects", value: filterMatch[1].trim(), content: `Filtering projects by ${filterMatch[1].trim()}...` }
       const playMatch = s.match(/play demo(?: of)? "?([\w\s-]+)"?/) || s.match(/play (?:the )?demo(?: for)? "?([\w\s-]+)"?/)
