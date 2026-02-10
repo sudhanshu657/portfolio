@@ -116,9 +116,51 @@ export default function Chatbot() {
           if (match) { match.click(); return true }
 
           // fallback: find button or link by text
-          const global = Array.from(document.querySelectorAll('button, a'))
-          const btn = global.find(e => (e.textContent||'').toLowerCase().includes((nameOrSlug||'').toLowerCase()))
-          if (btn) { btn.click(); return true }
+          const global = Array.from(document.querySelectorAll('button, a, h1, h2, h3, h4, span, p'))
+          const lowerName = (nameOrSlug||'').toLowerCase().trim()
+          if (lowerName) {
+            const textMatch = global.find(e => (e.textContent||'').toLowerCase().includes(lowerName))
+            if (textMatch) {
+              // if the match is a heading inside a project card, scroll that card into view and try to click Demo/GitHub inside it
+              let card = textMatch.closest('article, .card, .project, .Card, .card-content') || textMatch.parentElement
+              for (let i = 0; i < 4 && card; i++) {
+                // look for a demo button inside
+                const demoBtn = card.querySelector('button, a')
+                if (demoBtn) { try { demoBtn.scrollIntoView({behavior: 'smooth', block: 'center'}); demoBtn.click(); } catch(e){}; return true }
+                card = card.parentElement
+              }
+              // last resort: click the matched element if it's interactive
+              if (textMatch.tagName === 'A' || textMatch.tagName === 'BUTTON') { textMatch.click(); return true }
+            }
+
+            // If no direct text match, try scrolling to projects and perform a fuzzy word-match retry
+            const projectsSection = document.getElementById('projects') || document.querySelector('#projects')
+            if (projectsSection) {
+              try { projectsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }) } catch {}
+              // try to find headings within projects after a short delay
+              const retryFind = () => {
+                const headings = Array.from(projectsSection.querySelectorAll('h1,h2,h3,h4'))
+                const nameWords = lowerName.split(/\s+/).filter(Boolean)
+                for (const h of headings) {
+                  const txt = (h.textContent||'').toLowerCase()
+                  const allWords = nameWords.every(w => txt.includes(w))
+                  if (allWords) {
+                    // find a clickable button/link within the card container
+                    let card = h.closest('article, .Card, .card, .project') || h.parentElement
+                    for (let i = 0; i < 6 && card; i++) {
+                      const demoBtn = card.querySelector('button, a')
+                      if (demoBtn) { try { demoBtn.scrollIntoView({behavior: 'smooth', block: 'center'}); demoBtn.click(); } catch(e){}; return true }
+                      card = card.parentElement
+                    }
+                  }
+                }
+                return false
+              }
+
+              // perform synchronous retry (DOM is already rendered client-side)
+              if (retryFind()) return true
+            }
+          }
         } catch (e) {}
         return false
       }
@@ -139,6 +181,44 @@ export default function Chatbot() {
           }
         } catch (e) {}
         return false
+      }
+
+      // helper: highlight and open social icons in the hero section (github, linkedin)
+      const openSocialIcons = (services = []) => {
+        try {
+          const hero = document.getElementById('hero') || document.querySelector('#hero') || document.querySelector('section[id^="hero"]')
+          const anchors = hero ? Array.from(hero.querySelectorAll('a')) : Array.from(document.querySelectorAll('a'))
+          let acted = false
+          for (const svc of services) {
+            const key = (svc || '').toLowerCase()
+
+            // heuristics: href includes, aria-label/title includes, innerHTML includes, github/linkedin path patterns
+            let a = anchors.find(a => (a.getAttribute('href')||'').toLowerCase().includes(key))
+            if (!a) a = anchors.find(a => ((a.getAttribute('aria-label')||'') + ' ' + (a.getAttribute('title')||'')).toLowerCase().includes(key))
+            if (!a) a = anchors.find(a => (a.innerHTML||'').toLowerCase().includes(key))
+            if (!a && key === 'linkedin') a = anchors.find(a => (a.getAttribute('href')||'').toLowerCase().includes('linkedin.com') || (a.getAttribute('href')||'').toLowerCase().includes('/in/'))
+            if (!a && key === 'github') a = anchors.find(a => (a.getAttribute('href')||'').toLowerCase().includes('github.com'))
+
+            if (a) {
+              try {
+                a.style.outline = '3px solid #34d399'
+                a.style.outlineOffset = '4px'
+                a.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                // try native click, but fallback to window.open if nav doesn't occur
+                setTimeout(() => {
+                  try { a.click() } catch (e) {}
+                  try {
+                    const href = a.getAttribute('href')
+                    if (href && href.startsWith('http')) window.open(href, '_blank', 'noopener')
+                  } catch (e) {}
+                }, 250)
+                setTimeout(() => { a.style.outline = ''; a.style.outlineOffset = '' }, 2500)
+                acted = true
+              } catch (e) {}
+            }
+          }
+          return acted
+        } catch (e) { console.error('openSocialIcons error', e); return false }
       }
 
       switch (data.type) {
@@ -185,6 +265,13 @@ export default function Chatbot() {
         case "open-project": {
           const ok = openProjectModal(data.selector || data.value || data.section || '')
           addMessage(ok ? (data.content || 'Opened project details.') : '⚠️ Could not open project.')
+          break
+        }
+
+        case "open-socials": {
+          const sv = Array.isArray(data.value) ? data.value : (typeof data.value === 'string' ? data.value.split(',').map(s=>s.trim()) : [])
+          const ok = openSocialIcons(sv.length ? sv : [data.selector || data.section || 'github','linkedin'])
+          addMessage(ok ? (data.content || 'Opened socials.') : '⚠️ Could not find social icons.')
           break
         }
 
@@ -268,12 +355,78 @@ export default function Chatbot() {
 
   async function sendMessage() {
     if (!input.trim()) return
-
-    const newMessages = [...messages, { role: "user", content: input }]
+    const text = input.trim()
+    const newMessages = [...messages, { role: "user", content: text }]
     setMessages(newMessages)
     setInput("")
-    setLoading(true)
 
+    // Quick direct matches for single-word social shortcuts (covers misspellings)
+    const quickSocialMatch = (t) => {
+      const s = t.toLowerCase().trim()
+      const socialMap = {
+        linkedin: ["linkedin", "linkdein", "linkdin", "linkdean", "jinkdien", "jinkedin", "linkdean"],
+        github: ["github", "gitub", "githb", "git hub"]
+      }
+      const found = []
+      Object.entries(socialMap).forEach(([k, variants]) => {
+        if (variants.includes(s)) found.push(k)
+      })
+      return found.length ? found : null
+    }
+
+    const quick = quickSocialMatch(text)
+    if (quick) {
+      try { executeAction({ type: 'open-socials', value: quick, content: `Opening ${quick.join(' and ')}...` }) } catch (e) { console.error('quick social exec', e) }
+      return
+    }
+
+    // Local command parser: handle common commands immediately without calling API
+    const parseLocalCommand = (t) => {
+      const s = t.toLowerCase()
+      if (s.includes("view my work") || s.includes("view projects") || s.includes("show my work") || s === "view work") {
+        return { type: "scroll", section: "projects", content: "Opening projects..." }
+      }
+      if (s.includes("download cv") || s.includes("download resume") || s.includes("download my cv") || s === "download cv") {
+        return { type: "download-cv", content: "Downloading CV..." }
+      }
+      const openProjectMatch = s.match(/open project (?:named )?"?([\w\s-]+)"?/) || s.match(/open (?:the )?project "?([\w\s-]+)"?/) || s.match(/^open\s+"?([\w\s-]+)"?$/)
+      if (openProjectMatch) return { type: "open-project", selector: openProjectMatch[1].trim(), content: `Opening project ${openProjectMatch[1].trim()}...` }
+      const filterMatch = s.match(/filter projects by (.+)/) || s.match(/show projects (?:with|using) (.+)/)
+      if (filterMatch) return { type: "filter-projects", value: filterMatch[1].trim(), content: `Filtering projects by ${filterMatch[1].trim()}...` }
+      const playMatch = s.match(/play demo(?: of)? "?([\w\s-]+)"?/) || s.match(/play (?:the )?demo(?: for)? "?([\w\s-]+)"?/)
+      if (playMatch) return { type: "play-demo", selector: playMatch[1].trim(), content: `Playing demo for ${playMatch[1].trim()}...` }
+      const fillEmailMatch = s.includes("fill my email") || s.includes("fill email") || s.includes("autofill email")
+      if (fillEmailMatch) return { type: "autofill-contact", value: { email: (document.querySelector('meta[name="author"]')?.getAttribute('content') || '') || '' }, content: "Filled your email." }
+
+      // social shortcuts + misspellings (e.g., linkdein, jinkdien, gitub)
+      const socialMap = {
+        linkedin: ["linkedin", "linkdein", "linkdin", "linkdean", "jinkdien", "jinkedin"],
+        github: ["github", "gitub", "githb", "git hub"]
+      }
+      // detect patterns like 'linkedin and github' or single words
+      const socials = []
+      Object.entries(socialMap).forEach(([key, variants]) => {
+        for (const v of variants) {
+          if (s.includes(v)) { socials.push(key); break }
+        }
+      })
+      if (socials.length) return { type: "open-socials", value: socials, content: `Opening ${socials.join(' and ')}...` }
+      return null
+    }
+
+    const local = parseLocalCommand(text)
+    if (local) {
+      // run local action immediately
+      try {
+        executeAction(local)
+      } catch (e) {
+        console.error('Local action error', e)
+        addMessage('⚠️ Failed to perform local action.')
+      }
+      return
+    }
+
+    setLoading(true)
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
