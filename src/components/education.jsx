@@ -285,7 +285,7 @@ import { education, workExperience } from "../data/index.js"
 
 export default function Education() {
   return (
-    <div id="Education"  className="min-h-screen bg-background py-8 md:py-16 px-4">
+    <div id="education"  className="min-h-screen bg-background py-8 md:py-16 px-4">
       <style jsx>{`
         @keyframes fadeInUp {
           from {

@@ -12,6 +12,7 @@ import { Projects } from "@/components/project"
 import { Contact } from "@/components/contact"
 import { FloatingCube } from "@/components/floating-cube"
 import Education from "@/components/education"
+import Chatbot from "@/components/Chatbot"
 
 
 
@@ -64,6 +65,8 @@ export default function Portfolio() {
        <Education />
         <Contact />
       </main>
+
+      <Chatbot />
     </div>
   )
 }

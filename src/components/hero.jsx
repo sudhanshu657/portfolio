@@ -137,7 +137,7 @@ import { ArrowDown, Github, Linkedin, Mail } from "lucide-react"
 
 export function Hero() {
     return (
-        <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
+        <section id="hero" className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
             {/* Animated background particles */}
             <div className="absolute inset-0 overflow-hidden">
                 {[...Array(20)].map((_, i) => (
