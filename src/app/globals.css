@@ -4,7 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
@@ -122,30 +123,37 @@ html, body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-transparent text-foreground;
   }
+
   html {
+    @apply bg-background;
     scroll-behavior: smooth;
   }
 }
 
 /* Custom animations */
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-20px);
   }
 }
 
 @keyframes glow {
+
   0%,
   100% {
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
   }
+
   50% {
     box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
   }

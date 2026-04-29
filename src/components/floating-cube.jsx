@@ -17,7 +17,7 @@ export function FloatingCube() {
   return (
     <mesh ref={meshRef} position={[2, 0, 0]}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="#10b981" transparent opacity={0.6} wireframe />
+      <meshStandardMaterial color="#34d399" transparent opacity={0.8} wireframe />
     </mesh>
   )
 }

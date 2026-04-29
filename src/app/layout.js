@@ -16,7 +16,7 @@ const workSans = Work_Sans({
 });
 
 export const metadata = {
-  title: "Portfolio - Creative Developer",
+  title: "Sudh - Creative Developer",
   description: "Modern animated portfolio showcasing creative development skills",
 };
 

@@ -2,45 +2,50 @@
 
 import { useEffect, useState } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
+import dynamic from "next/dynamic"
+
+// Lazy load heavy components
 import { Canvas } from "@react-three/fiber"
-import { OrbitControls, Environment, Float } from "@react-three/drei"
+import { OrbitControls, Float } from "@react-three/drei"
+
+// Lazy load custom components
+const FloatingCube = dynamic(() => import("@/components/floating-cube").then((mod) => mod.FloatingCube), { ssr: false })
+const FloatingBubbles = dynamic(() => import("@/components/floating-bubbles").then((mod) => mod.FloatingBubbles), { ssr: false })
+const Chatbot = dynamic(() => import("@/components/Chatbot"), { ssr: false })
+
 import { Navigation } from "@/components/navigation"
 import { Hero } from "@/components/hero"
 import { About } from "@/components/about"
-import  Skills  from "@/components/skills"
+import Skills from "@/components/skills"
 import { Projects } from "@/components/project"
 import { Contact } from "@/components/contact"
-import { FloatingCube } from "@/components/floating-cube"
 import Education from "@/components/education"
-import Chatbot from "@/components/Chatbot"
-
-
 
 export default function Portfolio() {
-  const [mounted, setMounted] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const { scrollYProgress } = useScroll()
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
 
   useEffect(() => {
-    setMounted(true)
+    setIsClient(true)
   }, [])
 
-  if (!mounted) return null
-
   return (
-    <div className="relative min-h-screen bg-background">
-      {/* Background 3D Scene */}
-      <div className="fixed inset-0 -z-10">
-        <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
-          <Environment preset="night" />
-          <ambientLight intensity={0.2} />
-          <pointLight position={[10, 10, 10]} intensity={0.5} />
-          <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-            <FloatingCube />
-          </Float>
-          <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
-        </Canvas>
-      </div>
+    <div className="relative min-h-screen">
+      {/* Background 3D Scene - Only load on client and wrap in a check to avoid SSR issues */}
+      {isClient && (
+        <div className="fixed inset-0 -z-10">
+          <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
+            <ambientLight intensity={0.2} />
+            <pointLight position={[10, 10, 10]} intensity={0.5} />
+            <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+              <FloatingCube />
+              <FloatingBubbles count={40} />
+            </Float>
+            <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
+          </Canvas>
+        </div>
+      )}
 
       {/* Parallax Background Elements */}
       <motion.div style={{ y }} className="fixed inset-0 -z-5 opacity-10">
@@ -62,11 +67,11 @@ export default function Portfolio() {
         <About />
         <Skills />
         <Projects />
-       <Education />
+        <Education />
         <Contact />
       </main>
 
-      <Chatbot />
+      {isClient && <Chatbot />}
     </div>
   )
 }
