@@ -1,9 +1,19 @@
 export const workExperience = [
   {
+    id: 4,
+    company: "Great Developers Info Tech Pvt Ltd",
+    position: "SDE Intern",
+    duration: "25 May 2026 - Present",
+    location: "Noida, Uttar Pradesh (Onsite)",
+    description:
+      "Working on .NET C# framework, HeidiSQL as database, integrating multiple APIs, working on UI enhancement, and many more.",
+    skills: [".NET", "C#", "HeidiSQL", "API Integration", "UI/UX"],
+  },
+  {
     id: 1,
     company: "Devphant Informatica Ltd",
     position: "Full Stack Engineer",
-    duration: "16 March 2026 - Present",
+    duration: "16 March 2026 - 3 June 2026",
     location: "Remote",
     description:
       "Working on multiple websites with a focus on robust backend API design and frontend integration. Implementing scalable solutions using Spring Boot, Next.js, and SQL.",
@@ -60,6 +70,15 @@ export const education = [
 ];
 
 export const projects = [
+  {
+    title: "Carbon Clock website",
+    description:
+      "A green sustainability platform providing sustainability solutions and offering certificates to users through learning programs.",
+    image: "/carbon.png",
+    tech: ["Next.js", "MongoDB", "Cloudinary", "Tailwind CSS"],
+    github: "https://github.com/carbonclock/Carbon_clock",
+    demo: "https://www.carbonclock.in/",
+  },
   {
     title: "QuickStay Booking App",
     description:
